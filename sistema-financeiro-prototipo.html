@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X4Finance · Painel Financeiro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] },
+        colors: {
+          primary: {
+            50:'#f1f7fd', 100:'#e3eefa', 200:'#c7ddf3', 300:'#a3cced',
+            400:'#7fbae9', 500:'#63ace5', 600:'#4a93cf', 700:'#3a76ac',
+            800:'#2f5c86', 900:'#294a68'
+          }
+        },
+        boxShadow: {
+          card: '0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;}
+  .tabular{font-variant-numeric:tabular-nums;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .modal-backdrop{display:none;}
+  .modal-backdrop.active{display:flex;}
+  .drawer{transform:translateX(-100%);}
+  .drawer.open{transform:translateX(0);}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9999px;}
+  .drop-zone.dragover{background-color:#f1f7fd;border-color:#63ace5;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<div class="min-h-screen flex">
+
+  <!-- ========== SIDEBAR (desktop) / DRAWER (mobile) ========== -->
+  <aside id="sidebar" class="drawer fixed z-40 inset-y-0 left-0 w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 ease-out lg:translate-x-0 lg:static lg:flex">
+    <!-- Branding -->
+    <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-200">
+      <div class="w-11 h-11 shrink-0 rounded-xl border-2 border-dashed border-primary-300 bg-primary-50 flex items-center justify-center text-primary-500 text-[10px] font-bold text-center leading-tight">
+        [SUA<br>LOGO]
+      </div>
+      <div class="min-w-0">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Painel financeiro</p>
+        <p class="text-base font-bold text-slate-900 truncate">X4Finance</p>
+      </div>
+      <button onclick="toggleDrawer(false)" class="ml-auto lg:hidden p-1.5 text-slate-400 hover:text-slate-600" aria-label="Fechar menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Área Cliente / Consultor switch -->
+    <div class="px-4 pt-4">
+      <div class="grid grid-cols-2 gap-1 bg-slate-100 rounded-xl p-1">
+        <button id="btn-area-cliente" onclick="setArea('cliente')" class="area-btn text-sm font-semibold py-2 rounded-lg transition-colors bg-white text-primary-600 shadow-sm">
+          Área do Cliente
+        </button>
+        <button id="btn-area-consultor" onclick="setArea('consultor')" class="area-btn text-sm font-semibold py-2 rounded-lg transition-colors text-slate-500 hover:text-slate-700">
+          Área do Consultor
+        </button>
+      </div>
+    </div>
+
+    <!-- Client nav (desktop) -->
+    <nav id="client-nav" class="flex-1 px-3 mt-6 space-y-1">
+      <p class="px-3 text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Navegação</p>
+
+      <button data-view="dashboard" onclick="setView('dashboard')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Visão Geral
+      </button>
+
+      <button data-view="lancamentos" onclick="setView('lancamentos')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+        Lançamentos
+      </button>
+
+      <button data-view="bancos" onclick="setView('bancos')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M4 21V9l8-6 8 6v12M9 21V13h6v8"/></svg>
+        Meus Bancos
+      </button>
+    </nav>
+
+    <!-- Footer / user -->
+    <div class="p-4 border-t border-slate-200">
+      <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+        <div class="w-9 h-9 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold shrink-0">PC</div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-slate-800 truncate">Pedro Rodrigues</p>
+          <p class="text-xs text-slate-400 truncate">Cliente · Conta ativa</p>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <div id="drawer-overlay" onclick="toggleDrawer(false)" class="hidden fixed inset-0 bg-slate-900/40 z-30 lg:hidden"></div>
+
+  <!-- ========== MAIN COLUMN ========== -->
+  <div class="flex-1 min-w-0 flex flex-col pb-20 lg:pb-0">
+
+    <!-- Top bar (mobile) -->
+    <header class="lg:hidden sticky top-0 z-20 h-16 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center gap-3 px-4">
+      <button onclick="toggleDrawer(true)" class="p-2 -ml-2 text-slate-500" aria-label="Abrir menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="w-8 h-8 rounded-lg border-2 border-dashed border-primary-300 bg-primary-50 flex items-center justify-center text-primary-500 text-[7px] font-bold text-center leading-tight">LOGO</div>
+      <p class="font-bold text-slate-900 truncate">X4Finance</p>
+      <button class="ml-auto p-2 text-slate-400" aria-label="Notificações">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      </button>
+    </header>
+
+    <!-- Desktop top bar -->
+    <header class="hidden lg:flex sticky top-0 z-20 h-20 bg-white/90 backdrop-blur border-b border-slate-200 items-center px-8">
+      <h1 id="desktop-title" class="text-xl font-bold text-slate-900">Visão Geral</h1>
+      <p class="ml-3 text-sm text-slate-400" id="desktop-subtitle">Resumo financeiro em tempo real</p>
+      <div class="ml-auto flex items-center gap-3">
+        <button class="p-2.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Notificações">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        </button>
+        <div class="w-9 h-9 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">PC</div>
+      </div>
+    </header>
+
+    <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 max-w-6xl w-full mx-auto">
+
+      <!-- ================= VIEW: DASHBOARD ================= -->
+      <section id="view-dashboard" class="view active space-y-6">
+
+        <div class="lg:hidden">
+          <h2 class="text-2xl font-extrabold text-slate-900">Olá, Pedro 👋</h2>
+          <p class="text-sm text-slate-500 mt-0.5">Aqui está o resumo da sua conta</p>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-medium text-slate-500">Saldo Total</p>
+              <div class="w-9 h-9 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .672-3 1.5S10.343 11 12 11s3 .672 3 1.5S13.657 14 12 14m0-6c1.11 0 2.08.402 2.599 1M12 8V6m0 8v2m0-2c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <p class="tabular text-3xl font-extrabold text-slate-900 mt-3">R$ 48.230,90</p>
+            <p class="text-xs text-emerald-600 font-semibold mt-2 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+              +12,4% vs. mês anterior
+            </p>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-medium text-slate-500">Entradas do Mês</p>
+              <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0-16l-5 5m5-5l5 5"/></svg>
+              </div>
+            </div>
+            <p class="tabular text-3xl font-extrabold text-slate-900 mt-3">R$ 15.420,00</p>
+            <p class="text-xs text-slate-400 mt-2">18 lançamentos este mês</p>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-medium text-slate-500">Saídas do Mês</p>
+              <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20V4m0 16l-5-5m5 5l5-5"/></svg>
+              </div>
+            </div>
+            <p class="tabular text-3xl font-extrabold text-slate-900 mt-3">R$ 7.185,40</p>
+            <p class="text-xs text-slate-400 mt-2">23 lançamentos este mês</p>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="grid grid-cols-3 gap-3">
+          <button onclick="openModal('modal-entrada')" class="group flex flex-col items-center justify-center gap-2 bg-white border border-slate-200 hover:border-primary-300 hover:bg-primary-50/50 rounded-2xl shadow-card py-4 transition-colors">
+            <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xl font-bold group-hover:scale-105 transition-transform">+</div>
+            <span class="text-xs sm:text-sm font-semibold text-slate-700">Nova Entrada</span>
+          </button>
+          <button onclick="openModal('modal-saida')" class="group flex flex-col items-center justify-center gap-2 bg-white border border-slate-200 hover:border-primary-300 hover:bg-primary-50/50 rounded-2xl shadow-card py-4 transition-colors">
+            <div class="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center text-xl font-bold group-hover:scale-105 transition-transform">−</div>
+            <span class="text-xs sm:text-sm font-semibold text-slate-700">Nova Saída</span>
+          </button>
+          <button onclick="openModal('modal-transferencia')" class="group flex flex-col items-center justify-center gap-2 bg-white border border-slate-200 hover:border-primary-300 hover:bg-primary-50/50 rounded-2xl shadow-card py-4 transition-colors">
+            <div class="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center text-lg group-hover:scale-105 transition-transform">🔁</div>
+            <span class="text-xs sm:text-sm font-semibold text-slate-700">Transferência</span>
+          </button>
+        </div>
+
+        <!-- Recent movements -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <h3 class="font-bold text-slate-900">Últimas Movimentações</h3>
+            <button onclick="setView('lancamentos')" class="text-sm font-semibold text-primary-600 hover:text-primary-700">Ver todas</button>
+          </div>
+
+          <!-- Desktop table -->
+          <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                  <th class="px-5 py-3 font-semibold">Descrição</th>
+                  <th class="px-5 py-3 font-semibold">Categoria</th>
+                  <th class="px-5 py-3 font-semibold">Banco</th>
+                  <th class="px-5 py-3 font-semibold">Data</th>
+                  <th class="px-5 py-3 font-semibold text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody id="tx-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+
+          <!-- Mobile list -->
+          <div id="tx-list-mobile" class="sm:hidden divide-y divide-slate-100"></div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: LANÇAMENTOS ================= -->
+      <section id="view-lancamentos" class="view space-y-6">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">Lançamentos</h2>
+          <p class="text-sm text-slate-500 mt-0.5">Histórico completo e cadastro de movimentações</p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button onclick="openModal('modal-entrada')" class="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Nova Entrada
+          </button>
+          <button onclick="openModal('modal-saida')" class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Nova Saída
+          </button>
+          <button onclick="openModal('modal-transferencia')" class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-colors">
+            🔁 Transferência
+          </button>
+
+          <div class="ml-auto flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+            <div class="relative flex-1 sm:flex-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg>
+              <input type="text" placeholder="Buscar lançamento..." class="w-full sm:w-56 pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+          <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                  <th class="px-5 py-3 font-semibold">Descrição</th>
+                  <th class="px-5 py-3 font-semibold">Categoria</th>
+                  <th class="px-5 py-3 font-semibold">Banco</th>
+                  <th class="px-5 py-3 font-semibold">Data</th>
+                  <th class="px-5 py-3 font-semibold">Anexo</th>
+                  <th class="px-5 py-3 font-semibold text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody id="tx-table-body-full" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="tx-list-mobile-full" class="sm:hidden divide-y divide-slate-100"></div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: MEUS BANCOS ================= -->
+      <section id="view-bancos" class="view space-y-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-slate-900">Meus Bancos</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Contas bancárias conectadas à sua conta</p>
+          </div>
+          <button class="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <span class="hidden sm:inline">Conectar banco</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="bancos-grid"></div>
+
+        <div class="bg-white rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-primary-50 text-primary-500 flex items-center justify-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          </div>
+          <p class="font-semibold text-slate-700">Conecte mais um banco</p>
+          <p class="text-sm text-slate-400 mt-1 max-w-sm mx-auto">Adicione outra conta para acompanhar todos os seus saldos em um só lugar.</p>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: CONSULTOR (placeholder) ================= -->
+      <section id="view-consultor" class="view">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-10 text-center max-w-lg mx-auto mt-8">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-primary-50 text-primary-500 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-slate-900">Área do Consultor</h2>
+          <p class="text-sm text-slate-500 mt-2">Esta área é destinada à gestão de carteiras de clientes pelo consultor financeiro. Em breve você poderá visualizar clientes, metas e relatórios consolidados por aqui.</p>
+          <button onclick="setArea('cliente')" class="mt-6 inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors">
+            Voltar para Área do Cliente
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ========== BOTTOM TAB BAR (mobile, client only) ========== -->
+<nav id="bottom-nav" class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-3 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+  <button data-view="dashboard" onclick="setView('dashboard')" class="bottom-nav-item flex flex-col items-center gap-1 py-1 rounded-lg transition-colors">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <span class="text-[11px] font-semibold">Visão Geral</span>
+  </button>
+  <button data-view="lancamentos" onclick="setView('lancamentos')" class="bottom-nav-item flex flex-col items-center gap-1 py-1 rounded-lg transition-colors">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+    <span class="text-[11px] font-semibold">Lançamentos</span>
+  </button>
+  <button data-view="bancos" onclick="setView('bancos')" class="bottom-nav-item flex flex-col items-center gap-1 py-1 rounded-lg transition-colors">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M4 21V9l8-6 8 6v12M9 21V13h6v8"/></svg>
+    <span class="text-[11px] font-semibold">Meus Bancos</span>
+  </button>
+</nav>
+
+<!-- ========== MODAL: NOVA ENTRADA ========== -->
+<div id="modal-entrada" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/50 items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold">+</div>
+        <h3 class="font-bold text-slate-900">Nova Entrada</h3>
+      </div>
+      <button onclick="closeModal('modal-entrada')" class="p-1.5 text-slate-400 hover:text-slate-600" aria-label="Fechar">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="p-5 space-y-4" onsubmit="return handleSubmit(event,'Entrada registrada com sucesso.')">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Valor (R$)</label>
+        <input required type="text" inputmode="decimal" placeholder="0,00" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none text-lg font-semibold tabular">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Banco</label>
+        <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none bg-white">
+          <option value="" selected disabled>Selecione um banco</option>
+          <option>Nubank</option>
+          <option>Itaú</option>
+          <option>Bradesco</option>
+          <option>Banco do Brasil</option>
+          <option>Inter</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Categoria</label>
+        <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none bg-white">
+          <option value="" selected disabled>Selecione uma categoria</option>
+          <option>Salário</option>
+          <option>Vendas</option>
+          <option>Consultoria</option>
+          <option>Reembolso</option>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Anexo (opcional)</label>
+        <div id="drop-entrada" class="drop-zone border-2 border-dashed border-slate-200 rounded-xl px-4 py-6 text-center cursor-pointer transition-colors" onclick="document.getElementById('file-entrada').click()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 mx-auto text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/></svg>
+          <p class="text-sm text-slate-500"><span class="text-primary-600 font-semibold">Clique para enviar</span> ou arraste o arquivo</p>
+          <p class="text-xs text-slate-400 mt-1">PDF, PNG ou JPG até 10MB</p>
+          <p class="file-name text-xs font-semibold text-slate-600 mt-2 hidden"></p>
+        </div>
+        <input id="file-entrada" type="file" class="hidden">
+      </div>
+      <button type="submit" class="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm">Salvar Entrada</button>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: NOVA SAÍDA ========== -->
+<div id="modal-saida" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/50 items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-rose-500 text-white flex items-center justify-center font-bold">−</div>
+        <h3 class="font-bold text-slate-900">Nova Saída</h3>
+      </div>
+      <button onclick="closeModal('modal-saida')" class="p-1.5 text-slate-400 hover:text-slate-600" aria-label="Fechar">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="p-5 space-y-4" onsubmit="return handleSubmit(event,'Saída registrada com sucesso.')">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Valor (R$)</label>
+        <input required type="text" inputmode="decimal" placeholder="0,00" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none text-lg font-semibold tabular">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Banco</label>
+        <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none bg-white">
+          <option value="" selected disabled>Selecione um banco</option>
+          <option>Nubank</option>
+          <option>Itaú</option>
+          <option>Bradesco</option>
+          <option>Banco do Brasil</option>
+          <option>Inter</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Categoria</label>
+        <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none bg-white">
+          <option value="" selected disabled>Selecione uma categoria</option>
+          <option>Moradia</option>
+          <option>Alimentação</option>
+          <option>Transporte</option>
+          <option>Impostos</option>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Anexo (opcional)</label>
+        <div id="drop-saida" class="drop-zone border-2 border-dashed border-slate-200 rounded-xl px-4 py-6 text-center cursor-pointer transition-colors" onclick="document.getElementById('file-saida').click()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 mx-auto text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/></svg>
+          <p class="text-sm text-slate-500"><span class="text-primary-600 font-semibold">Clique para enviar</span> ou arraste o arquivo</p>
+          <p class="text-xs text-slate-400 mt-1">PDF, PNG ou JPG até 10MB</p>
+          <p class="file-name text-xs font-semibold text-slate-600 mt-2 hidden"></p>
+        </div>
+        <input id="file-saida" type="file" class="hidden">
+      </div>
+      <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm">Salvar Saída</button>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: TRANSFERÊNCIA ========== -->
+<div id="modal-transferencia" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/50 items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-primary-500 text-white flex items-center justify-center">🔁</div>
+        <h3 class="font-bold text-slate-900">Transferência entre Bancos</h3>
+      </div>
+      <button onclick="closeModal('modal-transferencia')" class="p-1.5 text-slate-400 hover:text-slate-600" aria-label="Fechar">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form class="p-5 space-y-4" onsubmit="return handleSubmit(event,'Transferência registrada com sucesso.')">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Valor (R$)</label>
+        <input required type="text" inputmode="decimal" placeholder="0,00" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none text-lg font-semibold tabular">
+      </div>
+      <div class="grid grid-cols-1 gap-4 relative">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Banco de Origem</label>
+          <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none bg-white">
+            <option value="" selected disabled>Selecione a origem</option>
+            <option>Nubank</option>
+            <option>Itaú</option>
+            <option>Bradesco</option>
+            <option>Banco do Brasil</option>
+            <option>Inter</option>
+          </select>
+        </div>
+        <div class="flex justify-center -my-1">
+          <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Banco de Destino</label>
+          <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none bg-white">
+            <option value="" selected disabled>Selecione o destino</option>
+            <option>Nubank</option>
+            <option>Itaú</option>
+            <option>Bradesco</option>
+            <option>Banco do Brasil</option>
+            <option>Inter</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm">Confirmar Transferência</button>
+    </form>
+  </div>
+</div>
+
+<!-- ========== TOAST ========== -->
+<div id="toast" class="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 translate-y-24 opacity-0 transition-all duration-300 z-[60] bg-slate-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg flex items-center gap-2">
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+  <span id="toast-message"></span>
+</div>
+
+<script>
+  // ---------- DATA ----------
+  const transactions = [
+    { desc: 'Recebimento Cliente XPTO', cat: 'Vendas', banco: 'Nubank', data: '18/08/2026', valor: 3200.00, tipo: 'entrada', anexo: true },
+    { desc: 'Aluguel Escritório', cat: 'Moradia', banco: 'Itaú', data: '17/08/2026', valor: -2100.00, tipo: 'saida', anexo: true },
+    { desc: 'Consultoria Prestada', cat: 'Consultoria', banco: 'Inter', data: '16/08/2026', valor: 1850.00, tipo: 'entrada', anexo: false },
+    { desc: 'Fornecedor de Materiais', cat: 'Outros', banco: 'Bradesco', data: '15/08/2026', valor: -640.50, tipo: 'saida', anexo: true },
+    { desc: 'Salário - Equipe', cat: 'Outros', banco: 'Banco do Brasil', data: '14/08/2026', valor: -4300.00, tipo: 'saida', anexo: false },
+    { desc: 'Venda de Produto', cat: 'Vendas', banco: 'Nubank', data: '12/08/2026', valor: 980.00, tipo: 'entrada', anexo: false },
+    { desc: 'Internet e Telefonia', cat: 'Outros', banco: 'Inter', data: '10/08/2026', valor: -215.90, tipo: 'saida', anexo: true },
+  ];
+
+  const bancos = [
+    { nome: 'Nubank', saldo: 18420.30, cor: '#820ad1', inicial: 'N' },
+    { nome: 'Itaú', saldo: 12980.00, cor: '#ec7000', inicial: 'I' },
+    { nome: 'Inter', saldo: 9540.10, cor: '#ff7a00', inicial: 'IN' },
+    { nome: 'Bradesco', saldo: 5230.50, cor: '#cc092f', inicial: 'B' },
+    { nome: 'Banco do Brasil', saldo: 2060.00, cor: '#facc15', inicial: 'BB' },
+  ];
+
+  const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  function renderTx(targetTableId, targetMobileId, limit) {
+    const list = limit ? transactions.slice(0, limit) : transactions;
+    const tbody = document.getElementById(targetTableId);
+    const mobile = document.getElementById(targetMobileId);
+    if (tbody) {
+      tbody.innerHTML = list.map(t => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-5 py-3.5 font-medium text-slate-800">${t.desc}</td>
+          <td class="px-5 py-3.5"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">${t.cat}</span></td>
+          <td class="px-5 py-3.5 text-slate-500">${t.banco}</td>
+          <td class="px-5 py-3.5 text-slate-500">${t.data}</td>
+          ${targetTableId.includes('full') ? `<td class="px-5 py-3.5">${t.anexo ? '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 10-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>' : '<span class="text-slate-300">—</span>'}</td>` : ''}
+          <td class="px-5 py-3.5 text-right font-bold tabular ${t.valor > 0 ? 'text-emerald-600' : 'text-rose-500'}">${t.valor > 0 ? '+' : '−'} ${fmt(Math.abs(t.valor))}</td>
+        </tr>
+      `).join('');
+    }
+    if (mobile) {
+      mobile.innerHTML = list.map(t => `
+        <div class="flex items-center gap-3 px-5 py-3.5">
+          <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${t.valor > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'} font-bold">
+            ${t.valor > 0 ? '+' : '−'}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-slate-800 truncate">${t.desc}</p>
+            <p class="text-xs text-slate-400">${t.cat} · ${t.banco} · ${t.data}</p>
+          </div>
+          <p class="text-sm font-bold tabular shrink-0 ${t.valor > 0 ? 'text-emerald-600' : 'text-rose-500'}">${t.valor > 0 ? '+' : '−'} ${fmt(Math.abs(t.valor))}</p>
+        </div>
+      `).join('');
+    }
+  }
+
+  function renderBancos() {
+    const grid = document.getElementById('bancos-grid');
+    grid.innerHTML = bancos.map(b => `
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold shrink-0" style="background-color:${b.cor}">${b.inicial}</div>
+          <div class="min-w-0">
+            <p class="font-bold text-slate-900 truncate">${b.nome}</p>
+            <p class="text-xs text-slate-400">Conta corrente</p>
+          </div>
+          <button class="ml-auto p-1.5 text-slate-300 hover:text-slate-500" aria-label="Mais opções">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4z"/></svg>
+          </button>
+        </div>
+        <p class="text-2xl font-extrabold text-slate-900 tabular mt-4">${fmt(b.saldo)}</p>
+        <p class="text-xs text-slate-400 mt-1">Saldo disponível</p>
+      </div>
+    `).join('');
+  }
+
+  renderTx('tx-table-body', 'tx-list-mobile', 5);
+  renderTx('tx-table-body-full', 'tx-list-mobile-full');
+  renderBancos();
+
+  // ---------- NAV STATE ----------
+  const titles = {
+    dashboard: ['Visão Geral', 'Resumo financeiro em tempo real'],
+    lancamentos: ['Lançamentos', 'Histórico completo e cadastro de movimentações'],
+    bancos: ['Meus Bancos', 'Contas bancárias conectadas à sua conta'],
+  };
+
+  function setView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+
+    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(btn => {
+      const active = btn.dataset.view === name;
+      btn.classList.toggle('bg-primary-50', active && btn.classList.contains('nav-item'));
+      btn.classList.toggle('text-primary-600', active);
+      btn.classList.toggle('text-slate-500', !active && btn.classList.contains('nav-item'));
+      btn.classList.toggle('text-slate-400', !active && btn.classList.contains('bottom-nav-item'));
+    });
+
+    if (titles[name]) {
+      document.getElementById('desktop-title').textContent = titles[name][0];
+      document.getElementById('desktop-subtitle').textContent = titles[name][1];
+    }
+    toggleDrawer(false);
+  }
+
+  function setArea(area) {
+    const cliente = area === 'cliente';
+    document.getElementById('btn-area-cliente').classList.toggle('bg-white', cliente);
+    document.getElementById('btn-area-cliente').classList.toggle('shadow-sm', cliente);
+    document.getElementById('btn-area-cliente').classList.toggle('text-primary-600', cliente);
+    document.getElementById('btn-area-cliente').classList.toggle('text-slate-500', !cliente);
+
+    document.getElementById('btn-area-consultor').classList.toggle('bg-white', !cliente);
+    document.getElementById('btn-area-consultor').classList.toggle('shadow-sm', !cliente);
+    document.getElementById('btn-area-consultor').classList.toggle('text-primary-600', !cliente);
+    document.getElementById('btn-area-consultor').classList.toggle('text-slate-500', cliente);
+
+    document.getElementById('client-nav').classList.toggle('hidden', !cliente);
+    document.getElementById('bottom-nav').classList.toggle('hidden', !cliente);
+
+    if (cliente) {
+      setView('dashboard');
+    } else {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-consultor').classList.add('active');
+      document.getElementById('desktop-title').textContent = 'Área do Consultor';
+      document.getElementById('desktop-subtitle').textContent = 'Gestão de carteiras de clientes';
+    }
+    toggleDrawer(false);
+  }
+
+  // initialize nav-item default styles
+  document.querySelectorAll('.nav-item').forEach(btn => btn.classList.add('text-slate-500'));
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.add('text-slate-400'));
+  setView('dashboard');
+
+  // ---------- DRAWER (mobile sidebar) ----------
+  function toggleDrawer(open) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('drawer-overlay');
+    if (window.innerWidth >= 1024) return;
+    sidebar.classList.toggle('open', open);
+    overlay.classList.toggle('hidden', !open);
+  }
+
+  // ---------- MODALS ----------
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', e => {
+      if (e.target === backdrop) closeModal(backdrop.id);
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.active').forEach(m => closeModal(m.id));
+    }
+  });
+
+  function handleSubmit(e, message) {
+    e.preventDefault();
+    const modal = e.target.closest('.modal-backdrop');
+    closeModal(modal.id);
+    e.target.reset();
+    modal.querySelectorAll('.file-name').forEach(el => el.classList.add('hidden'));
+    showToast(message);
+    return false;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-message').textContent = msg;
+    toast.classList.remove('translate-y-24', 'opacity-0');
+    setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 2800);
+  }
+
+  // ---------- DRAG & DROP ----------
+  ['drop-entrada', 'drop-saida'].forEach(id => {
+    const zone = document.getElementById(id);
+    const input = document.getElementById('file-' + id.split('-')[1]);
+    ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('dragover'); }));
+    zone.addEventListener('drop', e => {
+      if (e.dataTransfer.files.length) {
+        input.files = e.dataTransfer.files;
+        showFileName(zone, e.dataTransfer.files[0].name);
+      }
+    });
+    input.addEventListener('change', () => {
+      if (input.files.length) showFileName(zone, input.files[0].name);
+    });
+  });
+  function showFileName(zone, name) {
+    const el = zone.querySelector('.file-name');
+    el.textContent = '📎 ' + name;
+    el.classList.remove('hidden');
+  }
+
+  // resize safety: close drawer if resized to desktop
+  window.addEventListener('resize', () => { if (window.innerWidth >= 1024) toggleDrawer(false); });
+</script>
+</body>
+</html>
